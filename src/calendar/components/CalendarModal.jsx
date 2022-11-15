@@ -6,6 +6,9 @@ import DatePicker,{registerLocale} from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css"
+import { useCalendarStore, useUiSore } from "../../hooks";
+import { useEffect } from "react";
+
 
 registerLocale('es',es)
 
@@ -23,12 +26,13 @@ const customStyles = {
    Modal.setAppElement('#root');
 
 export const CalendarModal = () => {
-     const [isOpen, setIsOpen] = useState(true)
-     const [formSubmitted, setformSubmitted] = useState(false)
 
+     const [formSubmitted, setformSubmitted] = useState(false)
+     const {isDateModalOpen, closeDateModal}=useUiSore()
+     const {activeEvent,startSavingEvent}=useCalendarStore()
      const [formValues, setFormValues] = useState({
-          title:"Jovany",
-          notes:"Hola",
+          title:"",
+          notes:"",
           start:new Date(),
           end: addHours(new Date(),2)
      });
@@ -40,6 +44,14 @@ export const CalendarModal = () => {
                : "is-invalid")
      }, [formValues.title,formSubmitted])
 
+     useEffect(() => {
+          if(activeEvent!==null){
+               setFormValues({...activeEvent})
+          }
+     
+
+     }, [activeEvent])
+     
      const onInputChange=({target})=>{
           setFormValues({
                ...formValues,
@@ -54,10 +66,11 @@ export const CalendarModal = () => {
           })
      }
      const onCloseModal=()=>{
-          console.log("cerrando modal")
-          setIsOpen(false)
+          // console.log("cerrando modal")
+          closeDateModal();
+
      }
-     const onSubmit=(event)=>{
+     const onSubmit=async (event)=>{
           event.preventDefault();
           setformSubmitted(true);
 
@@ -67,7 +80,10 @@ export const CalendarModal = () => {
                return;
           }
           if(formValues.title.length<=0) return
-          console.log(formValues)
+
+          await startSavingEvent(formValues);
+          closeDateModal()
+          setformSubmitted(false);
 
           //TODO
           //cerrar modal
@@ -75,7 +91,7 @@ export const CalendarModal = () => {
      }
   return (
      <Modal 
-          isOpen={isOpen}
+          isOpen={isDateModalOpen}
           onRequestClose={onCloseModal}
           style={customStyles}
           className="modal"
